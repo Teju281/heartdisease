@@ -1,5 +1,5 @@
 # ==============================
-# heart_disease_app_all_in_one.py
+# heart_disease_app_all_in_one_webspeech.py
 # ==============================
 
 import streamlit as st
@@ -8,9 +8,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
-import pyttsx3
-import speech_recognition as sr
-import threading
 import matplotlib.pyplot as plt
 import difflib
 
@@ -33,34 +30,29 @@ def load_data():
             df[col].fillna(df[col].mode()[0], inplace=True)
 
     # Encode categorical variables
-    cat_cols = ["sex", "cp", "restecg", "slope", "thal"]
+    cat_cols = ["sex", "cp"]
     le_dict = {}
     for col in cat_cols:
-        if col in df.columns:
-            le = LabelEncoder()
-            df[col] = le.fit_transform(df[col])
-            le_dict[col] = le
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+        le_dict[col] = le
 
     return df, le_dict
 
 df, le_dict = load_data()
 
-# Features and target
-selected_features = ["age", "sex", "cp", "trestbps", "chol", "fbs",
-                     "restecg", "thalch", "exang", "oldpeak", "slope", "ca", "thal"]
+# ===============================
+# 2. Features and target
+# Reduced features for convenience
+# ===============================
+selected_features = ["age", "sex", "cp", "trestbps", "chol", "thalch", "exang"]
 X = df[selected_features]
-y = df["num"].astype(int)  # Multi-class target
+y = df["num"].astype(int)
 
-# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42
-)
-
-# Train model once
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
 
@@ -69,25 +61,22 @@ model.fit(X_train, y_train)
 # ===============================
 st.set_page_config(page_title="❤️ Heart Disease App", page_icon="❤️", layout="wide")
 st.markdown("""
-    <style>
-    .stApp { background-color: #fef6f6; }
-    .main-content { background-color: #ffffff; padding: 25px; border-radius: 15px; 
-                    box-shadow: 0px 4px 15px rgba(0,0,0,0.1); }
-    </style>
+<style>
+.stApp { background-color: #fffaf0; }
+.main-content { background-color: #ffffff; padding: 25px; border-radius: 15px; 
+                box-shadow: 0px 4px 15px rgba(0,0,0,0.1); }
+.card { padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow:0px 2px 8px rgba(0,0,0,0.1);}
+</style>
 """, unsafe_allow_html=True)
 
-# Sidebar Navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "🔍 Prediction", "💬 Voice Chatbot"])
 
-# ===============================
-# Helper: Safe LabelEncoder transform
-# ===============================
 def safe_transform(le, val):
     try:
         return le.transform([val])[0]
     except ValueError:
-        return -1  # assign -1 for unseen labels
+        return -1
 
 # ===============================
 # Home Page
@@ -98,38 +87,61 @@ if page == "🏠 Home":
     st.subheader("Learn about Heart Disease & Risk Factors")
 
     st.markdown("""
-    💖 **Heart disease** is a leading cause of death worldwide.  
-    This app helps you:
-    - 📈 Understand your risk factors  
-    - 🩺 Predict your likelihood of heart disease  
-    - 💬 Chat with a voice-enabled AI for heart health advice  
-    """)
+💖 Heart disease affects the heart and blood vessels.  
+Early detection is key! This app helps you:
+- 📈 Understand your risk factors  
+- 🩺 Predict your likelihood of heart disease  
+- 💬 Ask questions via voice-enabled AI
+""")
+
+    st.markdown('<div class="card" style="background-color:#ffe6e6;">', unsafe_allow_html=True)
+    st.subheader("💡 What is Heart Disease?")
+    st.write("Heart disease includes conditions like coronary artery disease, arrhythmia, and heart failure. "
+             "It may reduce blood flow and oxygen to your body.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card" style="background-color:#e6f2ff;">', unsafe_allow_html=True)
+    st.subheader("⚠️ Risk Factors")
+    st.write("""
+- 🩸 High Blood Pressure  
+- 🥓 High Cholesterol  
+- 🧪 Diabetes  
+- 🚭 Smoking  
+- ⚖️ Obesity  
+- 🛋️ Sedentary Lifestyle  
+- 👨‍👩‍👧‍👦 Family History
+""")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card" style="background-color:#fff0b3;">', unsafe_allow_html=True)
+    st.subheader("🩺 Symptoms to Watch")
+    st.write("""
+- 💔 Chest Pain  
+- 😮 Shortness of Breath  
+- 🥱 Fatigue  
+- ⚡ Dizziness or Fainting  
+- 💓 Irregular Heartbeat
+""")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card" style="background-color:#d1ffd6;">', unsafe_allow_html=True)
+    st.subheader("🏃 Prevention & Healthy Lifestyle")
+    st.write("""
+- 🥗 Balanced Diet  
+- 🏃‍♀️ Regular Exercise  
+- 🚭 Avoid Smoking & Limit Alcohol  
+- 🩺 Regular Checkups  
+- 🧘‍♂️ Manage Stress
+""")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.subheader("📊 Dataset Insights")
     disease_counts = df["num"].apply(lambda x: 0 if x==0 else 1).value_counts()
-    fig1, ax1 = plt.subplots()
-    ax1.pie(disease_counts, labels=["No Disease", "Disease"], autopct="%1.1f%%", startangle=90, colors=["#76c7c0","#ff6b6b"])
-    ax1.axis("equal")
-    st.pyplot(fig1)
-
-    df["AgeGroup"] = pd.cut(df["age"], bins=[20,30,40,50,60,70,80,100],
-                            labels=["20-30","31-40","41-50","51-60","61-70","71-80","81+"])
-    age_group_counts = df.groupby("AgeGroup")["num"].apply(lambda x: (x>0).sum())
-    fig2, ax2 = plt.subplots()
-    age_group_counts.plot(kind="bar", ax=ax2, color="#ff6b6b", alpha=0.7)
-    ax2.set_ylabel("Number of Heart Disease Cases")
-    ax2.set_xlabel("Age Group")
-    ax2.set_title("Heart Disease by Age Group")
-    st.pyplot(fig2)
-
-    st.markdown("""
-    ❤️ **Tips for Heart Health:**  
-    - Eat a balanced diet 🥗  
-    - Exercise regularly 🏃‍♂️  
-    - Avoid smoking 🚭  
-    - Monitor blood pressure & cholesterol 🩺  
-    - Manage stress 🧘‍♀️  
-    """)
+    fig, ax = plt.subplots()
+    ax.pie(disease_counts, labels=["No Disease", "Disease"], autopct="%1.1f%%", startangle=90,
+           colors=["#76c7c0","#ff6b6b"])
+    ax.axis("equal")
+    st.pyplot(fig)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ===============================
@@ -138,34 +150,21 @@ if page == "🏠 Home":
 elif page == "🔍 Prediction":
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
     st.title("🔍 Predict Heart Disease Risk")
-    st.write("Enter patient details:")
+    st.write("Fill in the patient details below:")
 
-    # Inputs using actual labels
-    age = st.slider("Age", 20, 100, 50)
-    sex = st.selectbox("Sex", le_dict["sex"].classes_)
-    cp = st.selectbox("Chest Pain Type", le_dict["cp"].classes_)
-    trestbps = st.number_input("Resting Blood Pressure (mmHg)", 80, 200, 120)
-    chol = st.number_input("Cholesterol Level (mg/dl)", 100, 600, 200)
-    fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", ["No","Yes"])
-    restecg = st.selectbox("Resting ECG Result", le_dict["restecg"].classes_)
-    thalch = st.number_input("Max Heart Rate Achieved", 60, 220, 150)
-    exang = st.selectbox("Exercise Induced Angina", ["No","Yes"])
-    oldpeak = st.number_input("ST Depression (oldpeak)", 0.0, 10.0, 1.0, step=0.1)
-    slope = st.selectbox("Slope of Peak Exercise ST Segment", le_dict["slope"].classes_)
-    ca = st.slider("Number of Major Vessels (0-3)", 0, 3, 0)
-    thal = st.selectbox("Thalassemia", le_dict["thal"].classes_)
+    age = st.slider("👤 Age", 20, 100, 45)
+    sex = st.radio("⚧ Sex", le_dict["sex"].classes_)
+    cp = st.selectbox("💔 Chest Pain Type", le_dict["cp"].classes_)
+    trestbps = st.slider("🩸 Resting Blood Pressure (mm Hg)", 80, 200, 120)
+    chol = st.slider("🥓 Serum Cholesterol (mg/dl)", 100, 600, 200)
+    thalch = st.slider("🏃 Maximum Heart Rate Achieved", 60, 220, 150)
+    exang = st.selectbox("😮 Exercise Induced Angina?", ["No","Yes"])
 
-    # Convert labels to numbers for model
     sex_val = safe_transform(le_dict["sex"], sex)
     cp_val = safe_transform(le_dict["cp"], cp)
-    restecg_val = safe_transform(le_dict["restecg"], restecg)
-    slope_val = safe_transform(le_dict["slope"], slope)
-    thal_val = safe_transform(le_dict["thal"], thal)
-    fbs_val = 1 if fbs=="Yes" else 0
     exang_val = 1 if exang=="Yes" else 0
 
-    input_data = np.array([[age, sex_val, cp_val, trestbps, chol, fbs_val,
-                            restecg_val, thalch, exang_val, oldpeak, slope_val, ca, thal_val]])
+    input_data = np.array([[age, sex_val, cp_val, trestbps, chol, thalch, exang_val]])
     input_scaled = scaler.transform(input_data)
 
     if st.button("Predict"):
@@ -179,14 +178,13 @@ elif page == "🔍 Prediction":
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ===============================
-# Voice Chatbot
+# Voice Chatbot Page (Web Speech API)
 # ===============================
 elif page == "💬 Voice Chatbot":
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    st.title("💬 Heart Disease Chatbot")
-    st.write("Ask questions about heart disease (voice or text)")
+    st.title("💬 Heart Disease Voice Chatbot")
+    st.write("Type your question and hear the answer automatically:")
 
-    engine = pyttsx3.init()
     faq = {
         "symptoms": "Symptoms include chest pain, shortness of breath, fatigue, irregular heartbeat, and dizziness.",
         "causes": "Causes include high blood pressure, high cholesterol, diabetes, obesity, smoking, stress, and family history.",
@@ -199,40 +197,30 @@ elif page == "💬 Voice Chatbot":
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    def speak(text):
-        def run():
-            engine.say(text)
-            engine.runAndWait()
-        threading.Thread(target=run).start()
-
-    def listen():
-        r = sr.Recognizer()
-        with sr.Microphone() as source:
-            st.info("🎤 Listening...")
-            audio = r.listen(source, phrase_time_limit=5)
-        try:
-            return r.recognize_google(audio)
-        except:
-            return "Sorry, I could not understand."
-
-    col1, col2 = st.columns(2)
-    with col1:
-        user_input = st.text_input("Type your question:")
-    with col2:
-        if st.button("🎙️ Speak"):
-            voice_input = listen()
-            if voice_input and "Sorry" not in voice_input:
-                st.session_state.chat_history.append(("You", voice_input))
-                user_input = voice_input
+    user_input = st.text_input("Type your question:")
 
     if st.button("Ask"):
         if user_input.strip():
             st.session_state.chat_history.append(("You", user_input))
-            # Fuzzy search for FAQ
-            match = difflib.get_close_matches(user_input.lower(), list(faq.keys()), n=1, cutoff=0.3)
-            response = faq[match[0]] if match else "🤔 I'm not sure. Please consult a doctor."
+            text = user_input.lower().strip()
+            
+            greetings = ["hi","hello","hey","thanks","thank you"]
+            if any(word in text for word in greetings):
+                response = "😊 You're welcome!"
+            else:
+                match = difflib.get_close_matches(text, list(faq.keys()), n=1, cutoff=0.3)
+                response = faq[match[0]] if match else "🤔 I'm not sure. Please consult a doctor."
+            
             st.session_state.chat_history.append(("Bot", response))
-            speak(response)
+            
+            # Web Speech API auto voice
+            js_code = f"""
+            <script>
+            var msg = new SpeechSynthesisUtterance("{response}");
+            window.speechSynthesis.speak(msg);
+            </script>
+            """
+            st.components.v1.html(js_code)
 
     for sender, msg in st.session_state.chat_history:
         if sender == "You":
