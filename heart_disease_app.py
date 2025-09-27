@@ -1,5 +1,5 @@
-# ==============================
-# heart_disease_app_all_in_one_webspeech.py
+# ============================== 
+# heart_disease_app_all_in_one_webspeech_fixed.py
 # ==============================
 
 import streamlit as st
@@ -18,7 +18,7 @@ import difflib
 def load_data():
     df = pd.read_csv("heart_disease.csv")
     
-    # Convert TRUE/FALSE to 1/0
+    # Convert TRUE/FALSE to 1/0 safely
     df["fbs"] = df["fbs"].map({True:1, False:0, "TRUE":1, "FALSE":0})
     df["exang"] = df["exang"].map({True:1, False:0, "TRUE":1, "FALSE":0})
     
@@ -34,7 +34,7 @@ def load_data():
     le_dict = {}
     for col in cat_cols:
         le = LabelEncoder()
-        df[col] = le.fit_transform(df[col])
+        df[col] = le.fit_transform(df[col].astype(str))
         le_dict[col] = le
 
     return df, le_dict
@@ -43,7 +43,6 @@ df, le_dict = load_data()
 
 # ===============================
 # 2. Features and target
-# Reduced features for convenience
 # ===============================
 selected_features = ["age", "sex", "cp", "trestbps", "chol", "thalch", "exang"]
 X = df[selected_features]
@@ -72,11 +71,14 @@ st.markdown("""
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "🔍 Prediction", "💬 Voice Chatbot"])
 
+# ===============================
+# Safe label transform function
+# ===============================
 def safe_transform(le, val):
     try:
         return le.transform([val])[0]
     except ValueError:
-        return -1
+        return -1  # Return -1 if unseen label
 
 # ===============================
 # Home Page
@@ -213,7 +215,6 @@ elif page == "💬 Voice Chatbot":
             
             st.session_state.chat_history.append(("Bot", response))
             
-            # Web Speech API auto voice
             js_code = f"""
             <script>
             var msg = new SpeechSynthesisUtterance("{response}");
