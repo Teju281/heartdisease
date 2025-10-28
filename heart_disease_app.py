@@ -1,5 +1,5 @@
 # ==============================
-# heart_disease_app_all_in_one_v11.py  ✅ Updated Stable Version
+# heart_disease_app_all_in_one_v11.py ✅ FINAL FIXED VERSION
 # ==============================
 
 import streamlit as st
@@ -14,6 +14,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, recall_score
 import matplotlib.pyplot as plt
 from rapidfuzz import process, fuzz
+
+# ✅ Must be FIRST Streamlit command
+st.set_page_config(page_title="❤️ Heart Disease App", page_icon="❤️", layout="wide")
 
 # ===============================
 # 1. Load and preprocess dataset
@@ -43,6 +46,7 @@ def load_data():
         le_dict[col] = le
 
     return df, le_dict
+
 
 df, le_dict = load_data()
 
@@ -79,24 +83,21 @@ for name, model in models.items():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    # Accuracy
     accuracies[name] = accuracy_score(y_test, y_pred) * 100
-
-    # Recall (macro average = handles multiclass safely)
     recalls[name] = recall_score(y_test, y_pred, average="macro") * 100
 
 best_model = max(recalls, key=recalls.get)
 
 # ===============================
-# Streamlit Page Config & Styling
+# Streamlit Styling
 # ===============================
-st.set_page_config(page_title="❤️ Heart Disease App", page_icon="❤️", layout="wide")
 st.markdown("""
 <style>
 .stApp { background-color: #fffaf0; }
-.main-content { background-color: #ffffff; padding: 25px; border-radius: 15px; 
+.main-content { background-color: #ffffff; padding: 25px; border-radius: 15px;
                 box-shadow: 0px 4px 15px rgba(0,0,0,0.1); }
-.card { padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow:0px 2px 8px rgba(0,0,0,0.1);}
+.card { padding: 15px; margin-bottom: 15px; border-radius: 10px;
+        box-shadow:0px 2px 8px rgba(0,0,0,0.1);}
 </style>
 """, unsafe_allow_html=True)
 
@@ -104,7 +105,7 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Home", "🔍 Prediction", "💬 Voice Chatbot"])
 
 # ===============================
-# Helper Function for Safe Label Transform
+# Helper Function
 # ===============================
 def safe_transform(le, val):
     try:
@@ -199,11 +200,10 @@ elif page == "🔍 Prediction":
         model = models[algo]
         prediction = model.predict(input_scaled)[0]
 
-        # Probability check (only for models with predict_proba)
         if hasattr(model, "predict_proba"):
             pred_prob = model.predict_proba(input_scaled)[0][1] * 100
         else:
-            pred_prob = 50.0  # fallback
+            pred_prob = 50.0
 
         pred_prob = np.clip(pred_prob, 0.1, 99.9)
 
